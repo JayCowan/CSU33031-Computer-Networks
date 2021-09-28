@@ -6,33 +6,39 @@ import 'dart:io';
 
 import 'package:assignment1/sender-process.dart';
 
-void main(List<String> arguments) {
+void main(List<String> arguments) async {
   exitCode = 0;
   final parser = ArgParser();
   parser.addCommand('send');
   parser.addCommand('recieve');
-  parser.addOption('port', abbr: 'p', help: 'The port for the pub/sub protocol', mandatory: true);
+  parser.addOption('port',
+      abbr: 'p', help: 'The port for the pub/sub protocol', mandatory: true);
 
   var argResults = parser.parse(arguments);
-
+  late int port;
   try {
-    if () {
-      
+    if (argResults.wasParsed('port')) {
+      port = int.parse(argResults['port']);
+      assert(port is int);
+    } else {
+      throw ArgumentError.value(argResults['port'] + ' is not a valid port');
     }
     if (argResults.command!.name == 'send' &&
         argResults.command!.name == 'recieve') {
       exitCode = 2;
       throw ArgumentError('Exception: conflicting arguments provided');
     } else if (arguments.contains('send')) {
-      stdin.forEach((element) async {
+      await stdin.forEach((element) async {
         var message = Utf8Codec().decode(element);
-        await SenderProcess.sendStringMessage(message, 4444);
+        await SenderProcess.sendStringMessage(message, port);
       });
     } else if (arguments.contains('recieve')) {
-      RecieverProcess.createReacieverProcess(port: 4444)
+      await RecieverProcess.createReacieverProcess(port: port)
           .then((value) => print('Reciever process ended'));
     }
   } on ArgumentError catch (e) {
-    stderr.writeln(e.toString() + '\n    ' + e.message);
+    stderr.writeln(e.toString() + '\n    ' + e.message.toString());
+  } catch (e) {
+    stderr.writeln(e);
   }
 }

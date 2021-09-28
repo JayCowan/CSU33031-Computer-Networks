@@ -4,7 +4,7 @@ import 'dart:io';
 class RecieverProcess {
   static Future<void> createReacieverProcess({required int port}) async {
     // Create datagram socket and bind to any ip address and the provided port
-    await RawDatagramSocket.bind(InternetAddress.anyIPv4, port)
+    await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, port)
         .then((RawDatagramSocket socket) {
       socket.listen((RawSocketEvent event) {
         if (event == RawSocketEvent.read) {

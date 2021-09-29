@@ -13,5 +13,5 @@ FROM scratch
 COPY --from=build /runtime/ /
 COPY --from=build /assignment1/bin/assignment1 /assignment1/bin/
 
-EXPOSE 8080
-CMD ["/assignment1/bin/assignment1"]
+EXPOSE 50001/udp
+ENTRYPOINT [ "/assignment1/bin/assignment1" ]

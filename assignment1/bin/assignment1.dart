@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:args/args.dart';
 import 'package:assignment1/reciever-process.dart';
 import 'dart:io';
@@ -34,7 +33,7 @@ void main(List<String> arguments) async {
       });
     } else if (arguments.contains('recieve')) {
       await RecieverProcess.createReacieverProcess(port: port)
-          .then((value) => print('Reciever process ended'));
+          .then((value) => print('Reciever process created on ip'));
     }
   } on ArgumentError catch (e) {
     stderr.writeln(e.toString() + '\n    ' + e.message.toString());

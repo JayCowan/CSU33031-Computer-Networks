@@ -51,7 +51,8 @@ void main(List<String> arguments) async {
           } else {
             await PublisherProcess()
                 .publish(message: message, broker: brokerIP, port: port)
-                .then((value) => print('Published $message to broker:$brokerIP:$port'));
+                .then((value) =>
+                    print('Published $message to broker:$brokerIP:$port'));
           }
         });
         // Subscribe protocol links to broker and awaits messages
@@ -63,9 +64,11 @@ void main(List<String> arguments) async {
     } else {
       throw ArgumentError.value('Exception: must provide valid broker ip');
     }
-  } on ArgumentError catch (e) {
+  } on ArgumentError catch (e, s) {
     stderr.writeln(e.toString() + '\n    ' + e.message.toString());
-  } catch (e) {
+    stderr.writeln(s.toString());
+  } catch (e, s) {
     stderr.writeln(e);
+    stderr.writeln(s.toString());
   }
 }

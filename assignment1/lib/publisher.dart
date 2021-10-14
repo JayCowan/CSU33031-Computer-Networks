@@ -12,12 +12,19 @@ class PublisherProcess {
       await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0,
               reusePort: true, reuseAddress: true)
           .then((RawDatagramSocket socket) {
+        //broker = InternetAddress('broker');
+
         socket.broadcastEnabled = true;
         socket.send(
-            AsciiCodec().encode(
-                json.encode(ProtocolInfo(type: 'pub', info: message).toJson())),
-            broker,
+            AsciiCodec().encode(json.encode(ProtocolInfo(
+                    type: PUBSUB.PUB,
+                    source: socket.address,
+                    subject: 'chat',
+                    info: message)
+                .toJson())),
+            InternetAddress.anyIPv4,
             port);
+        print('tried to send connection to broker');
         socket.listen((RawSocketEvent event) {
           var datagram = socket.receive();
           if (datagram is Datagram &&

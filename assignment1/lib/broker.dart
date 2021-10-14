@@ -4,8 +4,9 @@ import 'dart:io';
 import 'package:assignment1/protocol-info.dart';
 
 class BrokerProcess {
-  List<InternetAddress> subscribers = <InternetAddress>[];
-  List<InternetAddress> publishers = <InternetAddress>[];
+  Map<InternetAddress, Set<String>> subscribers =
+      <InternetAddress, Set<String>>{};
+  //List<InternetAddress> publishers = <InternetAddress>[];
 
   static Future<void> publishProtocol(String message, int port) async {
     await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0)
@@ -35,22 +36,30 @@ class BrokerProcess {
             var info = ProtocolInfo.fromJson(
                 json.decode(AsciiCodec().decode(datagram.data)));
             if (info.type == PUBSUB.PUB) {
-              if (!publishers.contains(datagram.address)) {
-                publishers.add(datagram.address);
-              }
-              stdout.writeln(
+              print(
                   'Recieved message ${AsciiCodec().decode(datagram.data)} from ${datagram.address.address}:${datagram.port}');
-              socket.send(AsciiCodec().encode(json.encode(ProtocolInfo.ack())),
-                  datagram.address, datagram.port);
-              subscribers.forEach((InternetAddress element) {
-                socket.send(datagram.data, element, port);
+              socket.send(
+                  AsciiCodec().encode(json
+                      .encode(ProtocolInfo.ack(socket.address, info.subject))),
+                  datagram.address,
+                  datagram.port);
+              subscribers.forEach((key, values) {
+                if (values.contains(ProtocolInfo.fromJson(
+                        json.decode(AsciiCodec().decode(datagram.data)))
+                    .subject)) {
+                  socket.send(datagram.data, key, port);
+                }
               });
             } else if (info.type == PUBSUB.SUB) {
-              if (!subscribers.contains(datagram.address)) {
-                subscribers.add(datagram.address);
-              }
-              socket.send(AsciiCodec().encode(json.encode(ProtocolInfo.ack())),
-                  datagram.address, port);
+              subscribers.update(info.source, (value) {
+                value.add(info.subject);
+                return value;
+              }, ifAbsent: () => <String>{info.subject});
+              socket.send(
+                  AsciiCodec().encode(json
+                      .encode(ProtocolInfo.ack(socket.address, info.subject))),
+                  datagram.address,
+                  port);
             } else if (info.type == PUBSUB.ACK) {
               print('Ack: ${datagram.address.address}');
             } else if (info.type == PUBSUB.ERROR) {

@@ -1,22 +1,16 @@
+import 'dart:io';
+
 class ProtocolInfo {
   late PUBSUB type;
+  late InternetAddress source;
+  late String subject;
   late String info;
 
-  ProtocolInfo({required String type, required this.info}) {
-    if (type.trim().toLowerCase() == 'pub') {
-      this.type = PUBSUB.PUB;
-    } else if (type.trim().toLowerCase() == 'sub') {
-      this.type = PUBSUB.SUB;
-    } else if (type.trim().toLowerCase() == 'ack') {
-      this.type = PUBSUB.ACK;
-    } else {
-      this.type = PUBSUB.ERROR;
-    }
-  }
-
-  static Map<String, dynamic> ack() {
-    return ProtocolInfo(type: 'ack', info: '').toJson();
-  }
+  ProtocolInfo(
+      {required this.type,
+      required this.source,
+      required this.subject,
+      required this.info});
 
   ProtocolInfo.fromJson(Map<String, dynamic> json) {
     var convertType = json['type'];
@@ -29,11 +23,13 @@ class ProtocolInfo {
     } else {
       type = PUBSUB.ERROR;
     }
+    source = InternetAddress(json['source']);
+    subject = json['subject'];
     info = json['info'];
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final data = <String, dynamic>{};
     if (type == PUBSUB.PUB) {
       data['type'] = 'pub';
     } else if (type == PUBSUB.SUB) {
@@ -43,8 +39,13 @@ class ProtocolInfo {
     } else {
       data['type'] = 'error';
     }
+    data['source'] = source.address;
+    data['subject'] = subject;
     data['info'] = info;
     return data;
+  }
+  static Map<String, dynamic> ack(InternetAddress source, String subject) {
+    return ProtocolInfo(type: PUBSUB.ACK, subject: subject, source: source, info: '').toJson();
   }
 }
 

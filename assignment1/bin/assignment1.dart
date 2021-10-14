@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:args/args.dart';
+import 'package:assignment1/protocol-info.dart';
 import 'package:assignment1/publisher.dart';
 import 'package:assignment1/subscriber.dart';
 import 'dart:io';
@@ -44,6 +45,27 @@ void main(List<String> arguments) async {
       brokerIP = InternetAddress(argResults['brokerip']);
       // Publish protocol sends message to broker
       if (arguments.contains('pub')) {
+        print('Publisher process started');
+        // ignore: unused_local_variable
+        /* for (var item in List.filled(10, int)) {
+          await Future.delayed(Duration(seconds: 2)).then((val) async => {
+                await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0,
+                        reusePort: true, reuseAddress: true)
+                    .then((RawDatagramSocket socket) {
+                  //var broker = InternetAddress(brokerIP);
+
+                  socket.broadcastEnabled = true;
+                  socket.send(
+                      AsciiCodec().encode(json.encode(
+                          ProtocolInfo(type: 'pub', info: 'hello world')
+                              .toJson())),
+                      InternetAddress('255.255.255.255'),
+                      port);
+                  socket.close();
+                })
+              });
+        } */
+
         await stdin.forEach((element) async {
           var message = Utf8Codec().decode(element);
           if (message == 'exit') {
@@ -54,21 +76,19 @@ void main(List<String> arguments) async {
                 .then((value) =>
                     print('Published $message to broker:$brokerIP:$port'));
           }
-        });
+        }); 
         // Subscribe protocol links to broker and awaits messages
       } else if (arguments.contains('sub')) {
         await SubscriberProcess()
-            .createSubscriberProcess(broker: brokerIP, port: port)
+            .createSubscriberProcess(port: port)
             .then((value) => print('Subscriber process started'));
       }
     } else {
       throw ArgumentError.value('Exception: must provide valid broker ip');
     }
   } on ArgumentError catch (e, s) {
-    stderr.writeln(e.toString() + '\n    ' + e.message.toString());
-    stderr.writeln(s.toString());
+    stderr.addError(e, s);
   } catch (e, s) {
-    stderr.writeln(e);
-    stderr.writeln(s.toString());
+    stderr.addError(e, s);
   }
 }

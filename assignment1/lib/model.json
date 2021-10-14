@@ -1,4 +1,6 @@
 {
     "type" : "publish",
+    "source": "sensor1",
+    "subject": "temp",
     "info" : "lorem ipsum dolor set amit"
 }

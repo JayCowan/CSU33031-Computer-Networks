@@ -46,9 +46,13 @@ void main(List<String> arguments) async {
       if (arguments.contains('pub')) {
         await stdin.forEach((element) async {
           var message = Utf8Codec().decode(element);
-          await PublisherProcess()
-              .publish(message: message, broker: brokerIP, port: port)
-              .then((value) => print('Published $message to broker'));
+          if (message == 'exit') {
+            return;
+          } else {
+            await PublisherProcess()
+                .publish(message: message, broker: brokerIP, port: port)
+                .then((value) => print('Published $message to broker:$brokerIP:$port'));
+          }
         });
         // Subscribe protocol links to broker and awaits messages
       } else if (arguments.contains('sub')) {

@@ -27,7 +27,7 @@ class SubscriberProcess {
             final recieved = ProtocolInfo.fromJson(
                 json.decode(AsciiCodec().decode(datagram.data)));
             // handle acknowledgement
-            int size = socket.send(
+            var size = socket.send(
                 AsciiCodec().encode(json.encode(ProtocolInfo.ack())),
                 datagram.address,
                 port);
@@ -38,8 +38,11 @@ class SubscriberProcess {
           //}
         });
       });
-    } on SocketException catch (e) {
-      stderr.addError(e);
+    } on SocketException catch (e, s) {
+      stderr.addError(e, s);
+      return;
+    } catch (e, s) {
+      stderr.addError(e, s);
     }
   }
 }

@@ -29,8 +29,11 @@ class PublisherProcess {
           }
         });
       });
-    } on SocketException catch (e) {
-      stderr.addError(e);
+    } on SocketException catch (e, s) {
+      stderr.addError(e, s);
+      return;
+    } catch (e, s) {
+      stderr.addError(e, s);
     }
   }
 }

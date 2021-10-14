@@ -12,8 +12,8 @@ class BrokerProcess {
         .then((RawDatagramSocket socket) {
       print('Now publishing from ${socket.address.address}:$port');
       socket.broadcastEnabled = true;
-      if (socket.send(AsciiCodec().encode(message),
-              InternetAddress('broker'), port) !=
+      if (socket.send(
+              AsciiCodec().encode(message), InternetAddress('broker'), port) !=
           0) {
         print('sent: $message to address :$port');
       } else {
@@ -59,8 +59,11 @@ class BrokerProcess {
           }
         });
       });
-    } on SocketException catch (e) {
-      stderr.addError(e);
+    } on SocketException catch (e, s) {
+      stderr.addError(e, s);
+      return;
+    } catch (e, s) {
+      stderr.addError(e, s);
     }
   }
 }

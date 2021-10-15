@@ -54,6 +54,7 @@ class SubscriberProcess {
       print(e.toString());
       print(s.toString());
       stderr.addError(e, s);
+      return;
     }
   }
 }

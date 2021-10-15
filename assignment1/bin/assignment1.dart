@@ -73,15 +73,17 @@ void main(List<String> arguments) async {
           } else {
             await PublisherProcess()
                 .publish(message: message, broker: brokerIP, port: port)
-                .then((value) =>
-                    print('Published $message to broker:$brokerIP:$port'));
+                .then((value) => print('Published to broker'));
           }
-        }); 
+        });
         // Subscribe protocol links to broker and awaits messages
       } else if (arguments.contains('sub')) {
-        await SubscriberProcess()
-            .createSubscriberProcess(port: port)
-            .then((value) => print('Subscriber process started'));
+        await SubscriberProcess().createSubscriberProcess(
+            port: port,
+            subjects: {
+              'temp',
+              'humidity'
+            }).then((value) => print('Subscriber process started'));
       }
     } else {
       throw ArgumentError.value('Exception: must provide valid broker ip');

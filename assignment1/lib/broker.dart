@@ -35,7 +35,8 @@ class BrokerProcess {
           if (datagram is Datagram) {
             var info = ProtocolInfo.fromJson(
                 json.decode(AsciiCodec().decode(datagram.data)));
-            if (info.type == PUBSUB.PUB) {
+            if (info.type == PUBSUB.PUB &&
+                datagram.address.address != '127.0.0.1') {
               print(
                   'Recieved message ${AsciiCodec().decode(datagram.data)} from ${datagram.address.address}:${datagram.port}');
               socket.send(
@@ -43,22 +44,40 @@ class BrokerProcess {
                       .encode(ProtocolInfo.ack(socket.address, info.subject))),
                   datagram.address,
                   datagram.port);
+              print(AsciiCodec().decode(datagram.data));
+              var dg = ProtocolInfo.fromJson(
+                  json.decode(AsciiCodec().decode(datagram.data)));
+              print(json.encode(dg.toJson()));
               subscribers.forEach((key, values) {
-                if (values.contains(ProtocolInfo.fromJson(
-                        json.decode(AsciiCodec().decode(datagram.data)))
-                    .subject)) {
+                print(key.address);
+                values.forEach((element) {
+                  print('  $element');
+                });
+                print(values.contains(dg.subject));
+                if (values.contains(dg.subject)) {
                   socket.send(datagram.data, key, port);
+                  print('Sent to $key');
                 }
               });
-            } else if (info.type == PUBSUB.SUB) {
-              subscribers.update(info.source, (value) {
-                value.add(info.subject);
+            } else if (info.type == PUBSUB.SUB && info.subject == 'register') {
+              print(
+                  'register ${datagram.address.address} for subjects ${info.info.substring(1, info.info.length - 1)}');
+              subscribers.update(datagram.address, (value) {
+                value.addAll(
+                    info.info.substring(1, info.info.length - 1).split(', '));
+                value.forEach((element) {
+                  print(element.toString());
+                });
                 return value;
-              }, ifAbsent: () => <String>{info.subject});
+              },
+                  ifAbsent: () => info.info
+                      .substring(1, info.info.length - 1)
+                      .split(', ')
+                      .toSet());
               socket.send(
                   AsciiCodec().encode(json
                       .encode(ProtocolInfo.ack(socket.address, info.subject))),
-                  datagram.address,
+                  InternetAddress('255.255.255.255'),
                   port);
             } else if (info.type == PUBSUB.ACK) {
               print('Ack: ${datagram.address.address}');

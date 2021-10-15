@@ -13,17 +13,15 @@ class PublisherProcess {
               reusePort: true, reuseAddress: true)
           .then((RawDatagramSocket socket) {
         //broker = InternetAddress('broker');
-
+        print('${message.split(': ').first} ${message.split(': ').last}');
         socket.broadcastEnabled = true;
-        socket.send(
-            AsciiCodec().encode(json.encode(ProtocolInfo(
-                    type: PUBSUB.PUB,
-                    source: socket.address,
-                    subject: 'chat',
-                    info: message)
-                .toJson())),
-            InternetAddress.anyIPv4,
-            port);
+        var dg = AsciiCodec().encode(json.encode(ProtocolInfo(
+                type: PUBSUB.PUB,
+                source: socket.address,
+                subject: message.split(': ').first,
+                info: message.split(': ').last)
+            .toJson()));
+        socket.send(dg, InternetAddress('255.255.255.255'), port);
         print('tried to send connection to broker');
         socket.listen((RawSocketEvent event) {
           var datagram = socket.receive();

@@ -21,4 +21,4 @@ doc/api/
 *.js_
 *.js.deps
 *.js.map
-capture_udp.pcap
+*.pcap

@@ -6,6 +6,7 @@ import 'package:assignment1/protocol-info.dart';
 class SubscriberProcess {
   Future<void> createSubscriberProcess(
       {required int port, required Set<String> subjects}) async {
+    bool hasRegistered = false;
     // Create datagram socket and bind to any ip address and the provided port
     try {
       await RawDatagramSocket.bind(InternetAddress.anyIPv4, 50001,
@@ -26,6 +27,20 @@ class SubscriberProcess {
         socket.listen((RawSocketEvent event) {
           // recieve datagram from socket if read event
           if (event == RawSocketEvent.read) {
+            while (!hasRegistered) {
+              var dg = socket.receive();
+              if (dg is Datagram) {
+                final ackRegister = ProtocolInfo.fromJson(
+                    json.decode(AsciiCodec().decode(dg.data)));
+                if (ackRegister.type == PUBSUB.ACK &&
+                    ackRegister.subject == 'register') {
+                  hasRegistered = true;
+                  print('Registered');
+                } else {
+                  print('Awaiting registry');
+                }
+              }
+            }
             var datagram = socket.receive();
             // ensure datagram not null
             if (datagram is Datagram) {

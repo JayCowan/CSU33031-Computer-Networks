@@ -13,13 +13,11 @@ void main(List<String> arguments) async {
   parser.addCommand('broker');
   parser.addCommand('sub');
   parser.addCommand('pub');
-  parser.addOption('brokerip', abbr: 'b', help: 'The broker IPv4 Address');
   parser.addOption('port',
       abbr: 'p', help: 'The port for the pub/sub protocol', mandatory: true);
 
   var argResults = parser.parse(arguments);
   late int port;
-  late InternetAddress brokerIP;
   try {
     if (argResults.wasParsed('port')) {
       port = int.parse(argResults['port']);
@@ -41,8 +39,7 @@ void main(List<String> arguments) async {
       await broker
           .fetchProtocol(port: port)
           .then((value) => print('Broker process started'));
-    } else if (argResults.wasParsed('brokerip')) {
-      brokerIP = InternetAddress(argResults['brokerip']);
+    } else {
       // Publish protocol sends message to broker
       if (arguments.contains('pub')) {
         print('Publisher process started');
@@ -71,25 +68,25 @@ void main(List<String> arguments) async {
           if (message == 'exit') {
             return;
           } else {
-            await PublisherProcess()
-                .publish(
-                    message: message.substring(0, message.length - 1),
-                    broker: brokerIP,
-                    port: port)
-                .then((value) => print('Published to broker'));
+            await PublisherProcess().publish(
+                message: message.substring(0, message.length - 1), port: port);
           }
         });
         // Subscribe protocol links to broker and awaits messages
       } else if (arguments.contains('sub')) {
-        await SubscriberProcess().createSubscriberProcess(
-            port: port,
-            subjects: {
-              'temp',
-              'humidity'
-            }).then((value) => print('Subscriber process started'));
+        print('Subjects to subscribe for seperated by spaces:');
+        var subjects = <String>{};
+        await stdin.forEach((element) async {
+          var list = Utf8Codec().decode(element).split(' ');
+          list.last = list.last.substring(0, list.last.length - 1);
+          subjects.addAll(list);
+          await SubscriberProcess()
+              .createSubscriberProcess(port: port, subjects: subjects)
+              .then((value) => print('New subscriber process started'));
+        });
+      } else {
+        throw ArgumentError('No valid pub/sub type provided');
       }
-    } else {
-      throw ArgumentError.value('Exception: must provide valid broker ip');
     }
   } on ArgumentError catch (e, s) {
     stderr.addError(e, s);

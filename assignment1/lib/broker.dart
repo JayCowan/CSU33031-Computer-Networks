@@ -48,16 +48,13 @@ class BrokerProcess {
               var dg = ProtocolInfo.fromJson(
                   json.decode(AsciiCodec().decode(datagram.data)));
               subscribers.forEach((key, values) {
-                print(key.address);
-                values.forEach((element) {
-                  print('  $element');
-                });
                 dg.type = PUBSUB.FORWARD;
                 dg.source = datagram.address;
                 if (values.contains(dg.subject)) {
                   socket.send(
                       AsciiCodec().encode(json.encode(dg.toJson())), key, port);
-                  print('Sent to ${key.address}');
+                  print(
+                      'Sent subject:${dg.subject}, message:${dg.info} to ${key.address}:${datagram.port}');
                 }
               });
             } else if (info.type == PUBSUB.SUB && info.subject == 'register') {

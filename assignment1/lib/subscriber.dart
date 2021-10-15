@@ -8,7 +8,7 @@ class SubscriberProcess {
       {required int port, required Set<String> subjects}) async {
     // Create datagram socket and bind to any ip address and the provided port
     try {
-      await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0,
+      await RawDatagramSocket.bind(InternetAddress.anyIPv4, 50001,
               reuseAddress: true, reusePort: true)
           .then((RawDatagramSocket socket) {
         //broker = InternetAddress(broker);
@@ -24,24 +24,31 @@ class SubscriberProcess {
             port);
 
         socket.listen((RawSocketEvent event) {
-          print(event);
-          // recieve datagram from socket
-          var datagram = socket.receive();
-          // ensure datagram not null
-          if (datagram is Datagram) {
-            print(datagram.toString());
-            // pull data from datagram and convert into string
-            final recieved = ProtocolInfo.fromJson(
-                json.decode(AsciiCodec().decode(datagram.data)));
-            // handle acknowledgement
-            var size = socket.send(
-                AsciiCodec().encode(json.encode(
-                    ProtocolInfo.ack(socket.address, recieved.subject))),
-                datagram.address,
-                port);
-            print(
-                'Recieved: ${recieved.info} from ${datagram.address.address}:$port');
-            print('sent ack of $size bytes');
+          // recieve datagram from socket if read event
+          if (event == RawSocketEvent.read) {
+            var datagram = socket.receive();
+            // ensure datagram not null
+            if (datagram is Datagram) {
+              // pull data from datagram and convert into string
+              final recieved = ProtocolInfo.fromJson(
+                  json.decode(AsciiCodec().decode(datagram.data)));
+              // handle acknowledgement
+              if (datagram.address.address != recieved.source.address) {
+                if (recieved.type == PUBSUB.FORWARD) {
+                  var size = socket.send(
+                      AsciiCodec().encode(json.encode(
+                          ProtocolInfo.ack(recieved.source, recieved.subject))),
+                      datagram.address,
+                      port);
+                  print(
+                      'Recieved: ${json.decode(AsciiCodec().decode(datagram.data))} from ${datagram.address.address}:$port');
+                  print('sent ack of $size bytes');
+                } else if (recieved.type == PUBSUB.ACK) {
+                  print(
+                      'Ack: ${datagram.address.address}, Subject: ${recieved.subject}');
+                }
+              }
+            }
           }
         });
       });

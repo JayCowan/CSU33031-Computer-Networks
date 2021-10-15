@@ -20,6 +20,8 @@ class ProtocolInfo {
       type = PUBSUB.SUB;
     } else if (convertType.trim().toLowerCase() == 'ack') {
       type = PUBSUB.ACK;
+    } else if (convertType.trim().toLowerCase() == 'forward') {
+      type = PUBSUB.FORWARD;
     } else {
       type = PUBSUB.ERROR;
     }
@@ -36,6 +38,8 @@ class ProtocolInfo {
       data['type'] = 'sub';
     } else if (type == PUBSUB.ACK) {
       data['type'] = 'ack';
+    } else if (type == PUBSUB.FORWARD) {
+      data['type'] = 'forward';
     } else {
       data['type'] = 'error';
     }
@@ -44,9 +48,12 @@ class ProtocolInfo {
     data['info'] = info;
     return data;
   }
+
   static Map<String, dynamic> ack(InternetAddress source, String subject) {
-    return ProtocolInfo(type: PUBSUB.ACK, subject: subject, source: source, info: '').toJson();
+    return ProtocolInfo(
+            type: PUBSUB.ACK, subject: subject, source: source, info: '')
+        .toJson();
   }
 }
 
-enum PUBSUB { PUB, SUB, ACK, ERROR }
+enum PUBSUB { PUB, SUB, FORWARD, ACK, ERROR }

@@ -72,7 +72,10 @@ void main(List<String> arguments) async {
             return;
           } else {
             await PublisherProcess()
-                .publish(message: message, broker: brokerIP, port: port)
+                .publish(
+                    message: message.substring(0, message.length - 1),
+                    broker: brokerIP,
+                    port: port)
                 .then((value) => print('Published to broker'));
           }
         });

@@ -44,19 +44,20 @@ class BrokerProcess {
                       .encode(ProtocolInfo.ack(socket.address, info.subject))),
                   datagram.address,
                   datagram.port);
-              print(AsciiCodec().decode(datagram.data));
+              // print(AsciiCodec().decode(datagram.data));
               var dg = ProtocolInfo.fromJson(
                   json.decode(AsciiCodec().decode(datagram.data)));
-              print(json.encode(dg.toJson()));
               subscribers.forEach((key, values) {
                 print(key.address);
                 values.forEach((element) {
                   print('  $element');
                 });
-                print(values.contains(dg.subject));
+                dg.type = PUBSUB.FORWARD;
+                dg.source = datagram.address;
                 if (values.contains(dg.subject)) {
-                  socket.send(datagram.data, key, port);
-                  print('Sent to $key');
+                  socket.send(
+                      AsciiCodec().encode(json.encode(dg.toJson())), key, port);
+                  print('Sent to ${key.address}');
                 }
               });
             } else if (info.type == PUBSUB.SUB && info.subject == 'register') {
@@ -75,12 +76,13 @@ class BrokerProcess {
                       .split(', ')
                       .toSet());
               socket.send(
-                  AsciiCodec().encode(json
-                      .encode(ProtocolInfo.ack(socket.address, info.subject))),
-                  InternetAddress('255.255.255.255'),
+                  AsciiCodec().encode(json.encode(
+                      ProtocolInfo.ack(datagram.address, info.subject))),
+                  datagram.address,
                   port);
             } else if (info.type == PUBSUB.ACK) {
-              print('Ack: ${datagram.address.address}');
+              print(
+                  'Ack: ${datagram.address.address}, Subject: ${info.subject}');
             } else if (info.type == PUBSUB.ERROR) {
               print('Unknown action in pubsub process with data ${info.info}');
             }

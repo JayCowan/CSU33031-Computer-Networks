@@ -1,11 +1,14 @@
 ---
 version: "2.1"
 services:
-  wireshark:
-    image: lscr.io/linuxserver/wireshark
-    container_name: wireshark
+  broker:
+    container_name: broker
     cap_add:
       - NET_ADMIN
+      - ALL
+    build:
+      context: .
+      dockerfile: "Dockerfile.broker"
     network_mode: host
     environment:
       - PUID=1000
@@ -13,32 +16,30 @@ services:
       - TZ=Europe/London
     volumes:
       - /config
-    
-    expose:
+    ports:
       - "3000"
       - "50001/udp"
-    restart: unless-stopped
-  broker:
-    container_name: broker
-    build: .
-    ports:
-      - "50001/udp"
     command: [ "broker", "--port", "50001"]
-    depends_on: 
-      - "wireshark"
+    restart: unless-stopped
   sub:
     container_name: sub
     build: .
+    cap_add:
+      - ALL
+    stdin_open: true
+    tty: true 
     ports:
       - "50001/udp"
-    command: [ "sub", "--port", "50001", "--brokerip", "172.0.0.2"]
+    command: [ "sub", "--port", "50001"]
     depends_on: 
       - "broker"
   pub:
     container_name: pub
+    cap_add:
+      - ALL
     build: .
     ports:
       - "50001/udp"
-    command: [ "pub", "--port", "50001", "--brokerip", "172.0.0.2"]
+    command: [ "pub", "--port", "50001"]
     depends_on: 
       - "sub"

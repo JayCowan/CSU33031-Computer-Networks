@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:args/args.dart';
-import 'package:assignment1/protocol-info.dart';
 import 'package:assignment1/publisher.dart';
 import 'package:assignment1/subscriber.dart';
 import 'dart:io';
@@ -9,6 +8,7 @@ import 'package:assignment1/broker.dart';
 
 void main(List<String> arguments) async {
   exitCode = 0;
+  // build argparser for creating cli
   final parser = ArgParser();
   parser.addCommand('broker');
   parser.addCommand('sub');
@@ -43,31 +43,13 @@ void main(List<String> arguments) async {
       // Publish protocol sends message to broker
       if (arguments.contains('pub')) {
         print('Publisher process started');
-        // ignore: unused_local_variable
-        /* for (var item in List.filled(10, int)) {
-          await Future.delayed(Duration(seconds: 2)).then((val) async => {
-                await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0,
-                        reusePort: true, reuseAddress: true)
-                    .then((RawDatagramSocket socket) {
-                  //var broker = InternetAddress(brokerIP);
-
-                  socket.broadcastEnabled = true;
-                  socket.send(
-                      AsciiCodec().encode(json.encode(
-                          ProtocolInfo(type: 'pub', info: 'hello world')
-                              .toJson())),
-                      InternetAddress('255.255.255.255'),
-                      port);
-                  socket.close();
-                })
-              });
-        } */
-
+        // Take input to create publish messages, sent with enter
         await stdin.forEach((element) async {
           var message = Utf8Codec().decode(element);
           if (message == 'exit') {
             return;
           } else {
+            // Make a publisher and send the message, clipping the \n from enter
             await PublisherProcess().publish(
                 message: message.substring(0, message.length - 1), port: port);
           }

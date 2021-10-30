@@ -1,5 +1,7 @@
 import 'dart:io';
 
+// Encoding class for the protocol, to group type, subject, info, and source 
+//  together
 class ProtocolInfo {
   late PUBSUB type;
   late InternetAddress source;
@@ -12,6 +14,7 @@ class ProtocolInfo {
       required this.subject,
       required this.info});
 
+  // JSON based constructor to decode from source
   ProtocolInfo.fromJson(Map<String, dynamic> json) {
     var convertType = json['type'];
     if (convertType.trim().toLowerCase() == 'pub') {
@@ -30,6 +33,7 @@ class ProtocolInfo {
     info = json['info'];
   }
 
+  // Export the protocol info to json so it can be sent properly
   Map<String, dynamic> toJson() {
     final data = <String, dynamic>{};
     if (type == PUBSUB.PUB) {
@@ -49,6 +53,7 @@ class ProtocolInfo {
     return data;
   }
 
+  // Standardized ack function to be used only for encoding acknowledgements
   static Map<String, dynamic> ack(InternetAddress source, String subject) {
     return ProtocolInfo(
             type: PUBSUB.ACK, subject: subject, source: source, info: '')
@@ -56,4 +61,5 @@ class ProtocolInfo {
   }
 }
 
+// Enum for classifying the type of message
 enum PUBSUB { PUB, SUB, FORWARD, ACK, ERROR }

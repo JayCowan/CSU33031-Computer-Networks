@@ -9,7 +9,7 @@ class SubscriberProcess {
     var hasRegistered = false;
     // Create datagram socket and bind to any ip address and the provided port
     try {
-      await RawDatagramSocket.bind(InternetAddress.anyIPv4, 50001,
+      await RawDatagramSocket.bind(InternetAddress.anyIPv4, port,
               reuseAddress: true, reusePort: true)
           .then((RawDatagramSocket socket) {
         socket.broadcastEnabled = true;

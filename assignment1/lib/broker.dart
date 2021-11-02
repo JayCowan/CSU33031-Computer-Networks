@@ -18,8 +18,8 @@ class BrokerProcess {
   //  subscribers
   Future<void> fetchProtocol({required int port}) async {
     try {
-      // Bind to any ip on port provided 
-      await RawDatagramSocket.bind(InternetAddress.anyIPv4, 50001,
+      // Bind to any ip on port provided
+      await RawDatagramSocket.bind(InternetAddress.anyIPv4, port,
               reuseAddress: true, reusePort: true)
           .then((RawDatagramSocket socket) {
         socket.broadcastEnabled = true;
@@ -39,7 +39,7 @@ class BrokerProcess {
                       .encode(ProtocolInfo.ack(socket.address, info.subject))),
                   datagram.address,
                   datagram.port);
-              // Convert recieved datagram to a forward message and send to 
+              // Convert recieved datagram to a forward message and send to
               //  subscribers registered to the message's subject
               var dg = ProtocolInfo.fromJson(
                   json.decode(AsciiCodec().decode(datagram.data)));
@@ -58,7 +58,7 @@ class BrokerProcess {
               print(
                   'register ${datagram.address.address} for subjects ${info.info.substring(1, info.info.length - 1)}');
               subscribers.update(datagram.address, (value) {
-                // 
+                //
                 value.addAll(
                     info.info.substring(1, info.info.length - 1).split(', '));
                 value.forEach((element) {

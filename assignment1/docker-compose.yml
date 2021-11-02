@@ -27,8 +27,26 @@ services:
     ports:
       - "50001/udp"
     command: [ "sub", "--port", "50001"]
+  sub2: 
+    container_name: sub2
+    build: .
+    cap_add: 
+      - ALL
+    stdin_open: true
+    tty: true 
+    ports:
+      - "50001/udp"
+    command: [ "sub", "--port", "50001"]
   pub:
     container_name: pub
+    cap_add:
+      - ALL
+    build: .
+    ports:
+      - "50001/udp"
+    command: [ "pub", "--port", "50001"]
+  pub2:
+    container_name: pub2
     cap_add:
       - ALL
     build: .

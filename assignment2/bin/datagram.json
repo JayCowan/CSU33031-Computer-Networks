@@ -1,0 +1,10 @@
+{
+    "header": {
+        "fwd":true,
+        "drp":false,
+        "mod":"string",
+        "src": "sourceip",
+        "dst": "destinationip"
+    },
+    "payload": ""
+}

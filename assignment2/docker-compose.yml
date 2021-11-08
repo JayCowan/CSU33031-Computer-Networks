@@ -1,7 +1,31 @@
-version: "1.0"
+version: "3.3"
 services:
   tcpdump:
      image: kaazing/tcpdump
      network_mode: "host"
      volumes:
        - ./tcpdump:/tcpdump
+  router:
+    container_name: router
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["router"]
+    tty: true 
+  reciever:
+    container_name: endpoint
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["element", "-r"]
+    tty: true 
+  sender:
+    container_name: sender
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["element", "-s"]
+    tty: true 
+
+
+

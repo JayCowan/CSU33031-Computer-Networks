@@ -1,10 +1,36 @@
 import 'dart:convert';
+import 'dart:io';
+
+import 'dart:typed_data';
 
 class Message {
-  TLV header;
-  String payload;
+  late TLV header;
+  late String payload;
 
   Message({required this.header, required this.payload});
+
+  Message.fromAsciiEncoded(Uint8List data) {
+    var json = jsonDecode(AsciiCodec().decode(data));
+    header = TLV.fromJson(json['header']);
+    payload = json['payload'];
+  }
+
+  Uint8List toAsciiEncoded() {
+    return AsciiCodec().encode(json.encode(toJson()));
+  }
+
+  Map<String, dynamic> toJson() {
+    StringBuffer buffer = StringBuffer('{ ');
+    buffer.writeAll([
+      '{ ',
+      'header: ',
+      json.encode(header.toJson()),
+      'payload: ',
+      payload,
+      '}'
+    ]);
+    return json.decode(buffer.toString());
+  }
 }
 
 class TLV {
@@ -33,7 +59,7 @@ class TLV {
       case 1:
         type = Type.combo;
         length = json['len'];
-        value = TLV.fromJson(json['val']);
+        value = TLV.fromJson(jsonDecode(json['val']));
         break;
       default:
         throw ArgumentError.value(
@@ -49,7 +75,7 @@ class TLV {
         data['len'] = (value as String).length;
         break;
       case Type.combo:
-        data['val'] = jsonEncode(value);
+        data['val'] = jsonEncode(value as Iterable);
         data['len'] = (value as Iterable).length;
         break;
     }

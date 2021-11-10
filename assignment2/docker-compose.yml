@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.8"
 services:
   tcpdump:
      image: kaazing/tcpdump
@@ -12,20 +12,32 @@ services:
       - "51510/udp"
     command: ["router"]
     tty: true 
+    stdin_open: true
+    cap_add:
+      - NET_ADMIN
+      - ALL
   reciever:
     container_name: endpoint
     build: .
     ports:
       - "51510/udp"
-    command: ["element", "-r"]
+    command: ["element", "--recieve"]
     tty: true 
+    stdin_open: true
+    cap_add:
+      - ALL
   sender:
     container_name: sender
     build: .
     ports:
       - "51510/udp"
-    command: ["element", "-s"]
-    tty: true 
-
-
-
+    command: ["element", "--send"]
+    tty: true
+    stdin_open: true
+    cap_add:
+      - ALL
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

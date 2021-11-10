@@ -20,22 +20,18 @@ void main(List<String> arguments) async {
       throw UnimplementedError();
     } else if (argResults.command!.name == 'router') {
       Router router = Router();
+      print('start router process');
       await router.forward();
     } else if (argResults.command!.name == 'element') {
-      if (argResults.command!.arguments.contains('send')) {
+      if (argResults.wasParsed('send')) {
         Element sender = Element();
-        while (exitCode == 0) {
-          Future.delayed(Duration(seconds: 1)).then(
-              (value) async =>
-                  await sender.send().then((value) => print('sender started')),
-              onError: (e, s) {
-            stderr.addError(e, s);
-            exitCode = 2;
-          });
-        }
-      } else if (argResults.command!.arguments.contains('recieve')) {
+        print('starting sender process');
+        Future.delayed(Duration(seconds: 1))
+            .then((value) async => await sender.send());
+      } else if (argResults.wasParsed('recieve')) {
         Element reciever = Element();
-        await reciever.recieve().then((value) => print('reciever started'));
+        print('starting reciever process');
+        await reciever.recieve();
       }
     }
   } catch (e, s) {

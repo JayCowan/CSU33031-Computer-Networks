@@ -20,13 +20,13 @@ class Message {
   }
 
   Map<String, dynamic> toJson() {
-    StringBuffer buffer = StringBuffer('{ ');
+    StringBuffer buffer = StringBuffer();
     buffer.writeAll([
       '{ ',
-      'header: ',
-      json.encode(header.toJson()),
-      'payload: ',
-      payload,
+      '"header": ',
+      '${json.encode(header.toJson())},',
+      '"payload": ',
+      '"$payload"',
       '}'
     ]);
     return json.decode(buffer.toString());

@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'dart:typed_data';
 
+import 'flow_table.dart';
+
 class Message {
   late TLV header;
   late String payload;
@@ -42,7 +44,7 @@ class TLV {
   TLV.fromTLVs({required Iterable<TLV> tlvs}) {
     type = Type.combo;
     length = tlvs.length;
-    value = tlvs;
+    value = tlvs.toSet();
   }
 
   TLV.fromJson(Map<String, dynamic> json) {
@@ -59,7 +61,25 @@ class TLV {
       case 1:
         type = Type.combo;
         length = json['len'];
-        value = TLV.fromJson(jsonDecode(json['val']));
+        Iterable vals = jsonDecode(json['val']);
+        value = <TLV>{};
+        for (var val in vals) {
+          (value as Set<TLV>).add(TLV.fromJson(val));
+        }
+        break;
+
+      /// assume that this is Type.flow
+      case 2:
+        type = Type.flow;
+        length = json['len'];
+        value = json['val'];
+        break;
+
+      /// assume that this is Type.update
+      case 3:
+        type = Type.update;
+        length = json['len'];
+        value = FlowEntry.fromJson(json['val']);
         break;
       default:
         throw ArgumentError.value(
@@ -75,8 +95,16 @@ class TLV {
         data['len'] = (value as String).length;
         break;
       case Type.combo:
-        data['val'] = jsonEncode(value as Iterable);
-        data['len'] = (value as Iterable).length;
+        data['val'] = jsonEncode((value as Iterable<TLV>).toList());
+        data['len'] = (value as Set<TLV>).length;
+        break;
+      case Type.flow:
+        data['val'] = value is String ? value : value.toString();
+        data['len'] = (value as String).length;
+        break;
+      case Type.update:
+        data['val'] = jsonEncode(value);
+        data['len'] = 1;
         break;
     }
     data['type'] = type.index;
@@ -84,7 +112,4 @@ class TLV {
   }
 }
 
-enum Type {
-  networkId,
-  combo,
-}
+enum Type { networkId, combo, flow, update }

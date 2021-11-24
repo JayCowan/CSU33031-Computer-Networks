@@ -5,27 +5,32 @@ services:
      network_mode: "host"
      volumes:
        - ./tcpdump:/tcpdump
-  router:
-    container_name: router
+
+  router00:
+    container_name: router00
     build: .
     ports:
       - "51510/udp"
     command: ["router"]
     tty: true 
     stdin_open: true
+    networks:
+      - default
+      - network01
     cap_add:
       - NET_ADMIN
       - ALL
-  reciever:
-    container_name: endpoint
+  startpoint:
+    container_name: startpoint
     build: .
     ports:
       - "51510/udp"
-    command: ["element", "--recieve"]
+    command: ["forward"]
     tty: true 
     stdin_open: true
-    cap_add:
-      - ALL
+    networks:
+      - default
+    
   sender:
     container_name: sender
     build: .
@@ -34,10 +39,104 @@ services:
     command: ["element", "--send"]
     tty: true
     stdin_open: true
+    networks:
+      - default
+
+  router01:
+    container_name: router01
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["router"]
+    tty: true 
+    stdin_open: true
+    networks:
+      - network01
+      - network02
     cap_add:
+      - NET_ADMIN
       - ALL
+
+  testpoint:
+    container_name: testpoint
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["forward"]
+    tty: true 
+    stdin_open: true
+    networks:
+      - network01
+  test_element:
+    container_name: test_element
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["element", "--recieve"]
+    tty: true 
+    stdin_open: true
+    networks:
+      - network01
+  
+  router02:
+    container_name: router02
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["router"]
+    tty: true 
+    stdin_open: true
+    networks:
+      - network02
+    cap_add:
+      - NET_ADMIN
+      - ALL
+  
+  endpoint:
+    container_name: endpoint
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["forward"]
+    tty: true 
+    stdin_open: true
+    networks:
+      - network02
+    
+  reciever:
+    container_name: reciever
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["element", "--recieve"]
+    tty: true 
+    stdin_open: true
+    networks:
+      - network02
+
+  controller:
+    container_name: controller
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["controller"]
+    tty: true
+    stdin_open: true
+    networks:
+      - default
+      - network01
+      - network02
+
 networks:
   default:
     ipam:
       config:
         - subnet: 172.20.0.0/16
+  network01:
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+  network02: 
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16

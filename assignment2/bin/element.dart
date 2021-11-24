@@ -34,14 +34,14 @@ class Element {
         51510,
         reuseAddress: false,
       ).then((RawDatagramSocket socket) async {
-        await InternetAddress.lookup('router').then((value) {
+        await InternetAddress.lookup('startpoint').then((value) {
           stdout.writeAll(value);
           socket.send(
               Message(
                       header: TLV(
                         type: Type.networkId,
-                        length: 8,
-                        value: 'endpoint',
+                        length: 'reciever'.length,
+                        value: 'reciever',
                       ),
                       payload: 'hello')
                   .toAsciiEncoded(),

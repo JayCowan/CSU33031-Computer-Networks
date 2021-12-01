@@ -2,6 +2,8 @@ import 'dart:collection';
 
 import 'dart:convert';
 
+import 'message.dart';
+
 class FlowTable {
   HashSet<FlowEntry> flowTable = HashSet();
 
@@ -18,7 +20,7 @@ class FlowTable {
 }
 
 class FlowEntry {
-  late String dest;
+  late NetworkId dest;
   late String ingress;
   String? egress;
 
@@ -26,7 +28,7 @@ class FlowEntry {
 
   FlowEntry.fromJson(dynamic json) {
     json is Map<String, dynamic> ? json : json = jsonDecode(json);
-    dest = json['dest'];
+    dest = NetworkId.fromString(json['dest']);
     ingress = json['ingress'];
     egress = json['egress'];
   }
@@ -37,7 +39,7 @@ class FlowEntry {
 
   Map<String, dynamic> toJson() {
     final data = <String, dynamic>{};
-    data['dest'] = dest;
+    data['dest'] = dest.toString();
     data['ingress'] = ingress;
     data['egress'] = egress;
     return data;

@@ -12,11 +12,30 @@ class Controller {
 
   void _buildFlowTable() {
     Set<FlowEntry> entries = {
-      FlowEntry(dest: 'reciever', ingress: 'startpoint', egress: 'router00'),
-      FlowEntry(dest: 'reciever', ingress: 'router00', egress: 'router01'),
-      FlowEntry(dest: 'reciever', ingress: 'router01', egress: 'router02'),
-      FlowEntry(dest: 'reciever', ingress: 'router02', egress: 'endpoint'),
-      FlowEntry(dest: 'reciever', ingress: 'endpoint')
+      FlowEntry(
+        dest: NetworkId.fromString('router02.endpoint.reciever'),
+        ingress: 'startpoint',
+        egress: 'router00',
+      ),
+      FlowEntry(
+        dest: NetworkId.fromString('router02.endpoint.reciever'),
+        ingress: 'router00',
+        egress: 'router01',
+      ),
+      FlowEntry(
+        dest: NetworkId.fromString('router02.endpoint.reciever'),
+        ingress: 'router01',
+        egress: 'router02',
+      ),
+      FlowEntry(
+        dest: NetworkId.fromString('router02.endpoint.reciever'),
+        ingress: 'router02',
+        egress: 'endpoint',
+      ),
+      FlowEntry(
+        dest: NetworkId.fromString('router02.endpoint.reciever'),
+        ingress: 'endpoint',
+      )
     };
     for (FlowEntry entry in entries) {
       flowTable.add(entry);

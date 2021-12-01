@@ -38,10 +38,10 @@ class Element {
           stdout.writeAll(value);
           socket.send(
               Message(
-                      header: TLV(
-                        type: Type.networkId,
-                        length: 'reciever'.length,
-                        value: 'reciever',
+                      header: TLV.fromNetworkId(
+                        NetworkId.fromString(
+                          'router02.endpoint.reciever',
+                        ),
                       ),
                       payload: 'hello')
                   .toAsciiEncoded(),

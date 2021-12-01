@@ -41,6 +41,18 @@ class TLV {
   late Object value;
   TLV({required this.type, required this.length, required this.value});
 
+  /* TLV.fromIdentifier({required Identifier identifier}) {
+    type = Type.identify;
+    length = 1;
+    value = identifier;
+  } */
+
+  TLV.fromNetworkId(NetworkId networkId) {
+    type = Type.networkId;
+    length = networkId.toString().length;
+    value = networkId;
+  }
+
   TLV.fromTLVs({required Iterable<TLV> tlvs}) {
     type = Type.combo;
     length = tlvs.length;
@@ -54,7 +66,7 @@ class TLV {
       case 0:
         type = Type.networkId;
         length = json['len'];
-        value = json['val'] as String;
+        value = NetworkId.fromString(json['val']);
         break;
 
       /// assume that this is Type.combo
@@ -81,6 +93,13 @@ class TLV {
         length = json['len'];
         value = FlowEntry.fromJson(json['val']);
         break;
+
+      /* /// assume that this is Type.identify
+      case 4:
+        type = Type.identify;
+        length = 1;
+        value = Identifier.values[json['val']];
+        break; */
       default:
         throw ArgumentError.value(
             json['type'], 'type', 'Invalid value when trying to parse json');
@@ -91,7 +110,9 @@ class TLV {
     final data = <String, dynamic>{};
     switch (type) {
       case Type.networkId:
-        data['val'] = value is String ? value : value.toString();
+        data['val'] = value is String
+            ? NetworkId.fromString(value as String)
+            : value.toString();
         data['len'] = (value as String).length;
         break;
       case Type.combo:
@@ -106,6 +127,11 @@ class TLV {
         data['val'] = jsonEncode(value);
         data['len'] = 1;
         break;
+      /* case Type.identify:
+        data['val'] = jsonEncode(
+            value is Identifier ? (value as Identifier).index : 'error');
+        data['len'] = 1;
+        break; */
     }
     data['type'] = type.index;
     return data;
@@ -113,3 +139,32 @@ class TLV {
 }
 
 enum Type { networkId, combo, flow, update }
+
+//enum Identifier { forwarder, router, controller, element }
+
+/// The Network Id for the purpose of routing messages to its destination
+class NetworkId {
+  /// The network to wich the destination belongs to ex: router02
+  late String network;
+
+  /// The location/computer within the network to which the destination belongs ex: John's PC
+  late String location;
+
+  /// The element/application within the location computer to deliver the message to ex: Chrome
+  late String element;
+
+  NetworkId(
+      {required this.network, required this.location, required this.element});
+
+  NetworkId.fromString(String networkId) {
+    List<String> elems = networkId.split('.');
+    network = elems[0];
+    location = elems[1];
+    element = elems[2];
+  }
+
+  @override
+  String toString() {
+    return '$network.$location.$element';
+  }
+}

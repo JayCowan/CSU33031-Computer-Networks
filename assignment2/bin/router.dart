@@ -29,44 +29,56 @@ class Router {
       Datagram dg, RawDatagramSocket socket, Message message) async {
     switch (message.header.type) {
       case Type.networkId:
-        Iterable<FlowEntry> route = flowTable.flowTable.where(
-            (element) => element.dest == (message.header.value as String));
-        if (route.isEmpty) {
-          InternetAddress.lookup('controller').then((value) => socket.send(
-              Message(
-                      header: TLV(type: Type.combo, length: 2, value: {
-                        TLV(
-                            type: Type.flow,
-                            length: (message.header.value as String).length,
-                            value: message.header.value),
-                        message.header
-                      }),
-                      payload: message.payload)
-                  .toAsciiEncoded(),
-              value.first,
-              51510));
-        } else if (route.length == 1) {
-          if (route.first.egress != null) {
-            InternetAddress.lookup(route.first.egress!).then(
-              (value) =>
-                  socket.send(message.toAsciiEncoded(), value.first, 51510),
-            );
-          } else {
-            await InternetAddress.lookup(message.header.value as String).then(
-                (value) => routingTable
-                    .addAll({message.header.value as String: value.toSet()}));
-            routingTable.entries
-                .where((element) => element.key == message.header.value)
-                .forEach((element) {
-              for (var element in element.value) {
-                socket.send(message.toAsciiEncoded(), element, 51510);
+        InternetAddress.lookup((message.header.value as NetworkId).location)
+            .then(
+          (value) async {
+            if (value.isEmpty) {
+              Iterable<FlowEntry> route = flowTable.flowTable.where((element) =>
+                  element.dest == (message.header.value as String));
+              if (route.isEmpty) {
+                InternetAddress.lookup('controller').then((value) =>
+                    socket.send(
+                        Message(
+                                header:
+                                    TLV(type: Type.combo, length: 2, value: {
+                                  TLV(
+                                      type: Type.flow,
+                                      length: (message.header.value as String)
+                                          .length,
+                                      value: message.header.value),
+                                  message.header
+                                }),
+                                payload: message.payload)
+                            .toAsciiEncoded(),
+                        value.first,
+                        51510));
+              } else if (route.length == 1) {
+                if (route.first.egress != null) {
+                  InternetAddress.lookup(route.first.egress!).then(
+                    (value) => socket.send(
+                        message.toAsciiEncoded(), value.first, 51510),
+                  );
+                } else {
+                  await InternetAddress.lookup(message.header.value as String)
+                      .then((value) => routingTable.addAll(
+                          {message.header.value as String: value.toSet()}));
+                  routingTable.entries
+                      .where((element) => element.key == message.header.value)
+                      .forEach((element) {
+                    for (var element in element.value) {
+                      socket.send(message.toAsciiEncoded(), element, 51510);
+                    }
+                  });
+                }
+              } else {
+                print(
+                    'Failed to forward packet to ${message.header.value} from ${dg.address.address}');
               }
-            });
-          }
-        } else {
-          print(
-              'Failed to forward packet to ${message.header.value} from ${dg.address.address}');
-        }
+            } else {
+              socket.send(dg.data, value.first, 51510);
+            }
+          },
+        );
         break;
       case Type.combo:
         for (TLV element in message.header.value as Iterable<TLV>) {

@@ -15,8 +15,12 @@ services:
     tty: true 
     stdin_open: true
     networks:
-      - default
-      - network01
+      default:
+        aliases:
+          - router
+      route0:
+        aliases:
+          - router
     cap_add:
       - NET_ADMIN
       - ALL
@@ -30,6 +34,7 @@ services:
     stdin_open: true
     networks:
       - default
+      - startpoint
     
   sender:
     container_name: sender
@@ -41,6 +46,7 @@ services:
     stdin_open: true
     networks:
       - default
+      - startpoint
 
   router01:
     container_name: router01
@@ -51,8 +57,15 @@ services:
     tty: true 
     stdin_open: true
     networks:
-      - network01
-      - network02
+      network01:
+        aliases:
+          - router
+      route0:
+        aliases:
+          - linked-router
+      route1:
+        aliases:
+          - router
     cap_add:
       - NET_ADMIN
       - ALL
@@ -67,6 +80,7 @@ services:
     stdin_open: true
     networks:
       - network01
+      - testpoint
   test_element:
     container_name: test_element
     build: .
@@ -76,7 +90,7 @@ services:
     tty: true 
     stdin_open: true
     networks:
-      - network01
+      - testpoint
   
   router02:
     container_name: router02
@@ -87,7 +101,12 @@ services:
     tty: true 
     stdin_open: true
     networks:
-      - network02
+      network02:
+        aliases:
+          - router
+      route1:
+        aliases:
+          - linked-router
     cap_add:
       - NET_ADMIN
       - ALL
@@ -102,6 +121,7 @@ services:
     stdin_open: true
     networks:
       - network02
+      - endpoint
     
   reciever:
     container_name: reciever
@@ -112,7 +132,7 @@ services:
     tty: true 
     stdin_open: true
     networks:
-      - network02
+      - endpoint
 
   controller:
     container_name: controller
@@ -126,6 +146,9 @@ services:
       - default
       - network01
       - network02
+      - startpoint
+      - testpoint
+      - endpoint
 
 networks:
   default:
@@ -140,3 +163,23 @@ networks:
     ipam:
       config:
         - subnet: 172.22.0.0/16
+  route0:
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+  route1:
+    ipam:
+      config:
+        - subnet: 172.24.0.0/16
+  startpoint:
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+  testpoint:
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16
+  endpoint:
+    ipam:
+      config:
+      - subnet: 172.27.0.0/16

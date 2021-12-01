@@ -110,17 +110,15 @@ class TLV {
     final data = <String, dynamic>{};
     switch (type) {
       case Type.networkId:
-        data['val'] = value is String
-            ? NetworkId.fromString(value as String)
-            : value.toString();
-        data['len'] = (value as String).length;
+        data['val'] = value.toString();
+        data['len'] = value.toString().length;
         break;
       case Type.combo:
         data['val'] = jsonEncode((value as Iterable<TLV>).toList());
         data['len'] = (value as Set<TLV>).length;
         break;
       case Type.flow:
-        data['val'] = value is String ? value : value.toString();
+        data['val'] = value;
         data['len'] = (value as String).length;
         break;
       case Type.update:

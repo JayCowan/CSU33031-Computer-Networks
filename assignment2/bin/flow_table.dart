@@ -13,9 +13,12 @@ class FlowTable {
     flowTable.add(entry);
   }
 
-  FlowEntry? find(String dest, String ingress) {
-    return flowTable.firstWhere(
-        (element) => (element.dest == dest) && (element.ingress == ingress));
+  FlowEntry? find(NetworkId dest, String ingress) {
+    FlowEntry? entry = flowTable.firstWhere((element) =>
+        (element.dest.toString() == dest.toString()) &&
+        (element.ingress == ingress));
+    print('${entry.dest}, ${entry.ingress}, ${entry.egress}');
+    return entry;
   }
 }
 
@@ -43,5 +46,10 @@ class FlowEntry {
     data['ingress'] = ingress;
     data['egress'] = egress;
     return data;
+  }
+
+  @override
+  String toString() {
+    return 'dest: ${dest.toString()}, ingress: $ingress, egress: $egress';
   }
 }

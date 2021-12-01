@@ -72,8 +72,10 @@ class Controller {
                   try {
                     TLV lookup = (message.header.value as Set<TLV>)
                         .firstWhere((element) => element.type == Type.flow);
+                    print(lookup.value.toString());
                     FlowEntry? entry = flowTable.find(
-                        lookup.value as String, locations[dg.address]!);
+                        NetworkId.fromString(lookup.value as String),
+                        locations[dg.address]!);
                     if (entry is FlowEntry) {
                       (message.header.value as Set<TLV>).remove(lookup);
                       (message.header.value as Set<TLV>)
@@ -90,6 +92,7 @@ class Controller {
                           'Entry not in flow table, dropping packet from ${dg.address.address}');
                     }
                   } on StateError catch (e, s) {
+                    print(message.toJson());
                     print(
                         'Invalid combo sent to controller! Dropping packet from ${dg.address.address}');
                     stderr.addError(e, s);
@@ -97,7 +100,7 @@ class Controller {
                   break;
                 case Type.flow:
                   FlowEntry? entry = flowTable.find(
-                      (message.header.value as String), dg.address.address);
+                      (message.header.value as NetworkId), dg.address.address);
                   if (entry is FlowEntry) {
                     socket.send(
                         AsciiCodec().encode(jsonEncode(Message(

@@ -35,19 +35,23 @@ class ForwardingService {
       Datagram dg, Message message, RawDatagramSocket socket) async {
     switch (message.header.type) {
       case Type.networkId:
+        String elem = (message.header.value as NetworkId).element;
+        print('looking for $elem');
         InternetAddress.lookup((message.header.value as NetworkId).element)
             .then(
           (value) {
-            if (value.isEmpty) {
-              // Not an element in the network
-              InternetAddress.lookup('router')
-                  .then((value) => socket.send(dg.data, value.first, 51510));
-            } else {
-              // is an element in the network
-              socket.send(dg.data, value.first, 51510);
-            }
+            print(value.first.address);
+            // is an element in the network
+            socket.send(dg.data, value.first, 51510);
           },
-        );
+        ).catchError((e) {
+          print(
+              'couldn\'t find ${(message.header.value as NetworkId).element}');
+          InternetAddress.lookup('router').then(
+            (value) => socket.send(dg.data, value.first, 51510),
+          );
+        }, test: (e) => e is SocketException);
+
         /* Iterable<FlowEntry> route = flowTable.flowTable.where(
             (element) => element.dest == (message.header.value as String));
         if (route.isEmpty) {

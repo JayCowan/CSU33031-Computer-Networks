@@ -5,11 +5,15 @@ import 'message.dart';
 import 'flow_table.dart';
 
 class Controller {
+  // the base flow table to use
   FlowTable flowTable = FlowTable();
+  // this lets us associate named tables with addresses to match named 
+  // requestors addresses with named ingress addresses
   Map<InternetAddress, String> locations = {};
 
   Controller();
 
+  /// Manually construct the flow table 
   void _buildFlowTable() {
     Set<FlowEntry> entries = {
       FlowEntry(
@@ -37,19 +41,21 @@ class Controller {
         ingress: 'endpoint',
       )
     };
+    // build locations to associate the address with the named element on the network
     for (FlowEntry entry in entries) {
       flowTable.add(entry);
       InternetAddress.lookup(entry.ingress).then(
-        (value) => value.forEach(
-          (element) {
+        (value) {
+          // add each lookup result to the locations table
+          for (var element in value) {
             locations[element] = entry.ingress;
-          },
-        ),
+          }
+        },
         onError: (value) => print('couldn\'t find ${entry.ingress}'),
       );
     }
   }
-
+  /// Begins the controller process and completes on a Future<void>
   Future<void> control() async {
     try {
       await RawDatagramSocket.bind(
@@ -58,6 +64,7 @@ class Controller {
         reuseAddress: false,
       ).then((RawDatagramSocket socket) {
         socket.listen((RawSocketEvent event) {
+          // build the flow table before listening
           _buildFlowTable();
           if (event == RawSocketEvent.read) {
             var dg = socket.receive();
@@ -65,23 +72,29 @@ class Controller {
               Message message = Message.fromAsciiEncoded(dg.data);
               switch (message.header.type) {
                 case Type.networkId:
+                  // controllers dont need networkIds
                   print(
                       'dropping network id packet from ${dg.address.address}');
                   break;
                 case Type.combo:
                   try {
+                    // look for flow requests in header, otherwise throw a stateerror
                     TLV lookup = (message.header.value as Set<TLV>)
                         .firstWhere((element) => element.type == Type.flow);
-                    print(lookup.value.toString());
+                    // look for a flowentry matching the request in the header
                     FlowEntry? entry = flowTable.find(
                         NetworkId.fromString(lookup.value as String),
                         locations[dg.address]!);
+
                     if (entry is FlowEntry) {
+                      // clean the header for the returned message
                       (message.header.value as Set<TLV>).remove(lookup);
+                      // add the update to the return header
                       (message.header.value as Set<TLV>)
                           .add(TLV(type: Type.update, length: 1, value: entry));
                       TLV newHeader =
                           TLV.fromTLVs(tlvs: message.header.value as Set<TLV>);
+                      // now send the update with the original message
                       socket.send(
                           Message(header: newHeader, payload: message.payload)
                               .toAsciiEncoded(),
@@ -92,16 +105,18 @@ class Controller {
                           'Entry not in flow table, dropping packet from ${dg.address.address}');
                     }
                   } on StateError catch (e, s) {
-                    print(message.toJson());
                     print(
                         'Invalid combo sent to controller! Dropping packet from ${dg.address.address}');
                     stderr.addError(e, s);
                   }
                   break;
                 case Type.flow:
+                  // when you have just a flow request, find the address
                   FlowEntry? entry = flowTable.find(
                       (message.header.value as NetworkId), dg.address.address);
+                  // if found
                   if (entry is FlowEntry) {
+                    // send the entry to the requesting network location
                     socket.send(
                         AsciiCodec().encode(jsonEncode(Message(
                                 header: TLV(
@@ -117,6 +132,7 @@ class Controller {
                   }
                   break;
                 case Type.update:
+                  // controller shouldnt recieve updates
                   print(
                       'only controller should send updates!\n    dropping update packet from ${dg.address.address}');
                   break;

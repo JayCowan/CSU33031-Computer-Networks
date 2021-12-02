@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'dart:typed_data';
 
@@ -104,6 +103,11 @@ class TLV {
         throw ArgumentError.value(
             json['type'], 'type', 'Invalid value when trying to parse json');
     }
+  }
+
+  @override
+  String toString() {
+    return jsonEncode(toJson());
   }
 
   Map<String, dynamic> toJson() {

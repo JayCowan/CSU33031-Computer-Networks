@@ -1,15 +1,13 @@
-import 'dart:collection';
-import 'dart:convert';
 import 'dart:io';
-import 'controller.dart';
 import 'flow_table.dart';
 import 'message.dart';
 
 class Router {
   Map<String, Set<InternetAddress>> routingTable = {};
   FlowTable flowTable = FlowTable();
-  Router();
 
+  Router();
+  /// starts the forwarding process and completes on a Future<void>
   Future<void> routerProcess() async {
     await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
@@ -25,52 +23,55 @@ class Router {
       });
     });
   }
-
+  /// internal semi-recursive forwarding function
   Future<Message?> _forward(
       Datagram dg, RawDatagramSocket socket, Message message) async {
     switch (message.header.type) {
       case Type.networkId:
-        if ((message.header.value is String) &&
-            ((message.header.value as String) == 'controller')) {
-          //print(message.header.value);
-          print(jsonEncode(message.toJson()));
-        }
-        InternetAddress.lookup((message.header.value as NetworkId).location)
+        print('looking for ${(message.header.value as NetworkId).location}');
+        await InternetAddress.lookup(
+                (message.header.value as NetworkId).location)
             .then(
           (value) => socket.send(dg.data, value.first, 51510),
         )
-            .catchError((e) {
-          Iterable<FlowEntry> route = flowTable.flowTable.where(
-              (element) => element.dest == (message.header.value as NetworkId));
+            .catchError((e) async {
+          print(
+              'couldn\'t find ${(message.header.value as NetworkId).location}');
+          Iterable<FlowEntry> route = flowTable.flowTable.where((element) =>
+              identical(element.dest.toString(),
+                  (message.header.value as NetworkId)));
+          print('route is $route');
           if (route.isEmpty) {
-            print('looking for controller');
-            print(jsonEncode(message.toJson()));
-            InternetAddress.lookup('controller').then((value) => socket.send(
-                Message(
-                        header: TLV(type: Type.combo, length: 2, value: {
-                          TLV(
-                              type: Type.flow,
-                              length: (message.header.value as NetworkId)
-                                  .toString()
-                                  .length,
-                              value: message.header.value.toString()),
-                          message.header
-                        }),
-                        payload: message.payload)
-                    .toAsciiEncoded(),
-                value.first,
-                51510));
+            await InternetAddress.lookup('controller')
+                .then((value) => socket.send(
+                    Message(
+                            header: TLV(type: Type.combo, length: 2, value: {
+                              TLV(
+                                  type: Type.flow,
+                                  length: (message.header.value as NetworkId)
+                                      .toString()
+                                      .length,
+                                  value: message.header.value.toString()),
+                              message.header
+                            }),
+                            payload: message.payload)
+                        .toAsciiEncoded(),
+                    value.first,
+                    51510));
+            return 0;
           } else if (route.length == 1) {
+            print('route has length 1');
             if (route.first.egress != null) {
               print('looking for ${route.first.egress}');
-              InternetAddress.lookup(route.first.egress!).then(
+              await InternetAddress.lookup(route.first.egress!).then(
                 (value) =>
                     socket.send(message.toAsciiEncoded(), value.first, 51510),
               );
+              return 0;
             } else {
               print(
                   'looking for ${(message.header.value as NetworkId).location}');
-              InternetAddress.lookup(
+              await InternetAddress.lookup(
                       (message.header.value as NetworkId).location)
                   .then(
                 (value) => routingTable.addAll(
@@ -83,11 +84,14 @@ class Router {
                       (message.header.value as NetworkId).location)
                   .forEach(
                 (element) {
+                  print(element);
                   for (var element in element.value) {
+                    print(element);
                     socket.send(message.toAsciiEncoded(), element, 51510);
                   }
                 },
               );
+              return 0;
             }
           } else {
             print(
@@ -99,21 +103,28 @@ class Router {
         }, test: (e) => e is SocketException);
         break;
       case Type.combo:
-        for (TLV element in message.header.value as Iterable<TLV>) {
+        Set<TLV> updates = (message.header.value as Iterable<TLV>)
+            .where((element) => element.type == Type.update)
+            .toSet();
+        for (TLV elem in updates) {
           await _forward(
-              dg, socket, Message(header: element, payload: message.payload));
+              dg, socket, Message(header: elem, payload: message.payload));
         }
-        break;
+        print('flowtable len is ${flowTable.flowTable.length}');
+        Set<TLV> netIds = (message.header.value as Iterable<TLV>)
+            .where((element) => element.type == Type.networkId)
+            .toSet();
+        for (var elem in netIds) {
+          await _forward(
+              dg, socket, Message(header: elem, payload: message.payload));
+        }
+        return null;
+      //break;
       case Type.flow:
         print('Dropping flow packet from ${dg.address.address}');
         break;
       case Type.update:
-        print(message.header.value);
-        flowTable.add(
-          message.header.value is FlowEntry
-              ? message.header.value as FlowEntry
-              : FlowEntry.fromJson(message.header.value),
-        );
+        flowTable.add(message.header.value as FlowEntry);
         break;
     }
   }

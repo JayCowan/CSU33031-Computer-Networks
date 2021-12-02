@@ -10,14 +10,14 @@ class FlowTable {
   FlowTable();
 
   void add(FlowEntry entry) {
-    if (!flowTable.any((element) => identical(element, entry))) {
+    if (!flowTable.any((element) => element.toString() == entry.toString())) {
       flowTable.add(entry);
     }
   }
 
   FlowEntry? find(NetworkId dest, String ingress) {
-    FlowEntry? entry = flowTable.firstWhere((element) =>
-        identical(element.dest, dest) && (element.ingress == ingress));
+    FlowEntry? entry = flowTable.firstWhere(
+        (element) => (element.dest.toString() == dest.toString()) && (element.ingress == ingress));
     return entry;
   }
 }

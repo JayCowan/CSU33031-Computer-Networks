@@ -7,6 +7,7 @@ class Router {
   FlowTable flowTable = FlowTable();
 
   Router();
+
   /// starts the forwarding process and completes on a Future<void>
   Future<void> routerProcess() async {
     await RawDatagramSocket.bind(
@@ -23,6 +24,7 @@ class Router {
       });
     });
   }
+
   /// internal semi-recursive forwarding function
   Future<Message?> _forward(
       Datagram dg, RawDatagramSocket socket, Message message) async {
@@ -38,8 +40,8 @@ class Router {
           print(
               'couldn\'t find ${(message.header.value as NetworkId).location}');
           Iterable<FlowEntry> route = flowTable.flowTable.where((element) =>
-              identical(element.dest.toString(),
-                  (message.header.value as NetworkId)));
+              element.dest.toString() ==
+              (message.header.value as NetworkId).toString());
           print('route is $route');
           if (route.isEmpty) {
             await InternetAddress.lookup('controller')

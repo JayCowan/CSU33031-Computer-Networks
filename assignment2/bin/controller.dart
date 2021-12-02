@@ -7,13 +7,13 @@ import 'flow_table.dart';
 class Controller {
   // the base flow table to use
   FlowTable flowTable = FlowTable();
-  // this lets us associate named tables with addresses to match named 
+  // this lets us associate named tables with addresses to match named
   // requestors addresses with named ingress addresses
   Map<InternetAddress, String> locations = {};
 
   Controller();
 
-  /// Manually construct the flow table 
+  /// Manually construct the flow table
   void _buildFlowTable() {
     Set<FlowEntry> entries = {
       FlowEntry(
@@ -55,6 +55,7 @@ class Controller {
       );
     }
   }
+
   /// Begins the controller process and completes on a Future<void>
   Future<void> control() async {
     try {
@@ -85,7 +86,6 @@ class Controller {
                     FlowEntry? entry = flowTable.find(
                         NetworkId.fromString(lookup.value as String),
                         locations[dg.address]!);
-
                     if (entry is FlowEntry) {
                       // clean the header for the returned message
                       (message.header.value as Set<TLV>).remove(lookup);

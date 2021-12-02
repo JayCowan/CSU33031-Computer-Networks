@@ -1,0 +1,185 @@
+version: "3.8"
+services:
+  tcpdump:
+     image: kaazing/tcpdump
+     network_mode: "host"
+     volumes:
+       - ./tcpdump:/tcpdump
+
+  router00:
+    container_name: router00
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["router"]
+    tty: true 
+    stdin_open: true
+    networks:
+      default:
+        aliases:
+          - router
+      route0:
+        aliases:
+          - router
+    cap_add:
+      - NET_ADMIN
+      - ALL
+  startpoint:
+    container_name: startpoint
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["forward"]
+    tty: true 
+    stdin_open: true
+    networks:
+      - default
+      - startpoint
+    
+  sender:
+    container_name: sender
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["element", "--send"]
+    tty: true
+    stdin_open: true
+    networks:
+      - default
+      - startpoint
+
+  router01:
+    container_name: router01
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["router"]
+    tty: true 
+    stdin_open: true
+    networks:
+      network01:
+        aliases:
+          - router
+      route0:
+        aliases:
+          - linked-router
+      route1:
+        aliases:
+          - router
+    cap_add:
+      - NET_ADMIN
+      - ALL
+
+  testpoint:
+    container_name: testpoint
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["forward"]
+    tty: true 
+    stdin_open: true
+    networks:
+      - network01
+      - testpoint
+  test_element:
+    container_name: test_element
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["element", "--recieve"]
+    tty: true 
+    stdin_open: true
+    networks:
+      - testpoint
+  
+  router02:
+    container_name: router02
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["router"]
+    tty: true 
+    stdin_open: true
+    networks:
+      network02:
+        aliases:
+          - router
+      route1:
+        aliases:
+          - linked-router
+    cap_add:
+      - NET_ADMIN
+      - ALL
+  
+  endpoint:
+    container_name: endpoint
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["forward"]
+    tty: true 
+    stdin_open: true
+    networks:
+      - network02
+      - endpoint
+    
+  reciever:
+    container_name: reciever
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["element", "--recieve"]
+    tty: true 
+    stdin_open: true
+    networks:
+      - endpoint
+
+  controller:
+    container_name: controller
+    build: .
+    ports:
+      - "51510/udp"
+    command: ["controller"]
+    tty: true
+    stdin_open: true
+    networks:
+      - default
+      - network01
+      - network02
+      - startpoint
+      - testpoint
+      - endpoint
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  network01:
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+  network02: 
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+  route0:
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+  route1:
+    ipam:
+      config:
+        - subnet: 172.24.0.0/16
+  startpoint:
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+  testpoint:
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16
+  endpoint:
+    ipam:
+      config:
+      - subnet: 172.27.0.0/16

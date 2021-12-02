@@ -74,8 +74,6 @@ class Controller {
               switch (message.header.type) {
                 case Type.networkId:
                   // controllers dont need networkIds
-                  print(
-                      'dropping network id packet from ${dg.address.address}');
                   break;
                 case Type.combo:
                   try {

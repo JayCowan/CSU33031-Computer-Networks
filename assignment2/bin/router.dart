@@ -8,7 +8,7 @@ class Router {
 
   Router();
 
-  /// starts the forwarding process and completes on a Future<void>
+  /// Starts the forwarding process and completes on a Future<void>
   Future<void> routerProcess() async {
     await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
@@ -25,25 +25,24 @@ class Router {
     });
   }
 
-  /// internal semi-recursive forwarding function
+  /// Internal semi-recursive forwarding function
   Future<Message?> _forward(
       Datagram dg, RawDatagramSocket socket, Message message) async {
     switch (message.header.type) {
       case Type.networkId:
-        print('looking for ${(message.header.value as NetworkId).location}');
+      // look to see if the location is on this network
         await InternetAddress.lookup(
                 (message.header.value as NetworkId).location)
             .then(
           (value) => socket.send(dg.data, value.first, 51510),
         )
+        // if the location is not on the network, look for the route
             .catchError((e) async {
-          print(
-              'couldn\'t find ${(message.header.value as NetworkId).location}');
           Iterable<FlowEntry> route = flowTable.flowTable.where((element) =>
               element.dest.toString() ==
               (message.header.value as NetworkId).toString());
-          print('route is $route');
           if (route.isEmpty) {
+            // if no valid routes exist, request the flowentry from the controller
             await InternetAddress.lookup('controller')
                 .then((value) => socket.send(
                     Message(
@@ -60,19 +59,18 @@ class Router {
                         .toAsciiEncoded(),
                     value.first,
                     51510));
-            return 0;
           } else if (route.length == 1) {
-            print('route has length 1');
+            // if we only have one route, and the egress is not null (which 
+            //  means its not on the associated network), lookup the egress and 
+            //  forward there
             if (route.first.egress != null) {
-              print('looking for ${route.first.egress}');
               await InternetAddress.lookup(route.first.egress!).then(
                 (value) =>
                     socket.send(message.toAsciiEncoded(), value.first, 51510),
               );
-              return 0;
             } else {
-              print(
-                  'looking for ${(message.header.value as NetworkId).location}');
+              // if the egress is null, meaning it should be on our network, 
+              //  look up the location on the network and try to add it to our routing table
               await InternetAddress.lookup(
                       (message.header.value as NetworkId).location)
                   .then(
@@ -80,22 +78,22 @@ class Router {
                   {(message.header.value as NetworkId).location: value.toSet()},
                 ),
               );
+              // send the message to any addresses associated with the named 
+              //  location
               routingTable.entries
                   .where((element) =>
                       element.key ==
                       (message.header.value as NetworkId).location)
                   .forEach(
                 (element) {
-                  print(element);
                   for (var element in element.value) {
-                    print(element);
                     socket.send(message.toAsciiEncoded(), element, 51510);
                   }
                 },
               );
-              return 0;
             }
           } else {
+            // no known way to forward the packet
             print(
                 'Failed to forward packet to ${message.header.value} from ${dg.address.address}');
           }
@@ -105,6 +103,8 @@ class Router {
         }, test: (e) => e is SocketException);
         break;
       case Type.combo:
+        // when we recieve a combo (usually from the controller), check for 
+        //  routing table updates and recursively handle them
         Set<TLV> updates = (message.header.value as Iterable<TLV>)
             .where((element) => element.type == Type.update)
             .toSet();
@@ -112,7 +112,8 @@ class Router {
           await _forward(
               dg, socket, Message(header: elem, payload: message.payload));
         }
-        print('flowtable len is ${flowTable.flowTable.length}');
+        // handle network ids by recurively calling forward, as this should now 
+        //  be added to the routing table
         Set<TLV> netIds = (message.header.value as Iterable<TLV>)
             .where((element) => element.type == Type.networkId)
             .toSet();
@@ -120,12 +121,13 @@ class Router {
           await _forward(
               dg, socket, Message(header: elem, payload: message.payload));
         }
-        return null;
-      //break;
+      break;
       case Type.flow:
+        // the router doesnt handle flow requests
         print('Dropping flow packet from ${dg.address.address}');
         break;
       case Type.update:
+        // add updates to the flow table
         flowTable.add(message.header.value as FlowEntry);
         break;
     }

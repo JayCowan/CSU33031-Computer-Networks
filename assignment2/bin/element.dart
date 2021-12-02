@@ -4,6 +4,7 @@ import 'message.dart';
 class Element {
   Element();
 
+  /// An application/element to recieve a message
   Future<void> recieve() async {
     try {
       await RawDatagramSocket.bind(
@@ -27,6 +28,8 @@ class Element {
     }
   }
 
+  /// An application/element to send a message to a hardcoded reciever
+  /// application at 'router02.endpoint.reciever'
   Future<void> send() async {
     try {
       await RawDatagramSocket.bind(

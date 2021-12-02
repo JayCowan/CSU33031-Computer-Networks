@@ -10,16 +10,20 @@ class Message {
 
   Message({required this.header, required this.payload});
 
+  /// Takes the ascii encoded data (usually from Datagram.data) and decodees it
+  /// into an Instance of Message
   Message.fromAsciiEncoded(Uint8List data) {
     var json = jsonDecode(AsciiCodec().decode(data));
     header = TLV.fromJson(json['header']);
     payload = json['payload'];
   }
 
+  /// Encode the Message into ASCII (usually used to send as Datagram.data)
   Uint8List toAsciiEncoded() {
     return AsciiCodec().encode(json.encode(toJson()));
   }
 
+  /// Export the message to a json format
   Map<String, dynamic> toJson() {
     StringBuffer buffer = StringBuffer();
     buffer.writeAll([
@@ -34,30 +38,30 @@ class Message {
   }
 }
 
+/// A class to handle the headers of messages, taking an enumerated type, a
+/// length of either the content or number of elements, and an object, usually a
+/// string encoding of the network id, flow entry or a set of other TLVs
 class TLV {
   late Type type;
   late int length;
   late Object value;
   TLV({required this.type, required this.length, required this.value});
 
-  /* TLV.fromIdentifier({required Identifier identifier}) {
-    type = Type.identify;
-    length = 1;
-    value = identifier;
-  } */
-
+  /// Build a networkId enumerated TLV
   TLV.fromNetworkId(NetworkId networkId) {
     type = Type.networkId;
     length = networkId.toString().length;
     value = networkId;
   }
 
+  /// Create a combo enumerated TLV from a Set of TLVs
   TLV.fromTLVs({required Iterable<TLV> tlvs}) {
     type = Type.combo;
     length = tlvs.length;
     value = tlvs.toSet();
   }
 
+  /// Decode a TLV from a JSON object
   TLV.fromJson(Map<String, dynamic> json) {
     switch (json['type']) {
 
@@ -110,6 +114,7 @@ class TLV {
     return jsonEncode(toJson());
   }
 
+  /// Returns a JSON encoded object from the TLV
   Map<String, dynamic> toJson() {
     final data = <String, dynamic>{};
     switch (type) {
@@ -129,20 +134,14 @@ class TLV {
         data['val'] = jsonEncode(value);
         data['len'] = 1;
         break;
-      /* case Type.identify:
-        data['val'] = jsonEncode(
-            value is Identifier ? (value as Identifier).index : 'error');
-        data['len'] = 1;
-        break; */
     }
     data['type'] = type.index;
     return data;
   }
 }
 
+/// Type enumeration for handling TLVs
 enum Type { networkId, combo, flow, update }
-
-//enum Identifier { forwarder, router, controller, element }
 
 /// The Network Id for the purpose of routing messages to its destination
 class NetworkId {
@@ -158,6 +157,8 @@ class NetworkId {
   NetworkId(
       {required this.network, required this.location, required this.element});
 
+  /// Build a NetworkId from a properly formatted string, like
+  /// 'router.location.element'
   NetworkId.fromString(String networkId) {
     List<String> elems = networkId.split('.');
     network = elems[0];

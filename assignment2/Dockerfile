@@ -1,3 +1,6 @@
+# Author: James Cowan
+# Student #: 19309917
+
 FROM dart:stable AS build
 
 WORKDIR /assignment2

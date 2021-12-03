@@ -1,3 +1,8 @@
+/*
+* Author: James Cowan
+* Student #: 19309917
+*/
+
 import 'dart:io';
 
 import 'package:args/args.dart';

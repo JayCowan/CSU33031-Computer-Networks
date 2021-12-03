@@ -1,3 +1,8 @@
+/*
+* Author: James Cowan
+* Student #: 19309917
+*/
+
 import 'dart:convert';
 import 'dart:io';
 import 'message.dart';

@@ -64,9 +64,9 @@ class Controller {
         51510,
         reuseAddress: false,
       ).then((RawDatagramSocket socket) {
+        // build the flow table before listening
+        _buildFlowTable();
         socket.listen((RawSocketEvent event) {
-          // build the flow table before listening
-          _buildFlowTable();
           if (event == RawSocketEvent.read) {
             var dg = socket.receive();
             if (dg is Datagram) {
